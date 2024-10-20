@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -16,10 +17,13 @@ public class ServiceProvider {
     private UUID uuid;
     private String serviceName;
     @JsonIgnore
-    private String serviceSecret;;
+    private String serviceSecret;
     @JsonIgnore
     private String endpoint;
     private String status;
+    private LocalDateTime lastUpdate;
+    @JsonIgnore
+    private LocalDateTime lastHeartbeat;
 
     public ServiceProvider(String serviceName, String serviceSecret, String endpoint) {
         this.serviceName = serviceName;
@@ -60,5 +64,21 @@ public class ServiceProvider {
 
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+
+    public LocalDateTime getLastUpdate() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(LocalDateTime lastUpdate) {
+        this.lastUpdate = lastUpdate;
+    }
+
+    public LocalDateTime getLastHeartbeat() {
+        return lastHeartbeat;
+    }
+
+    public void setLastHeartbeat(LocalDateTime lastHeartbeat) {
+        this.lastHeartbeat = lastHeartbeat;
     }
 }

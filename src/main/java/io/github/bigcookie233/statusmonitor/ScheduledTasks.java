@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 @Component
 public class ScheduledTasks {
     @Autowired
@@ -23,23 +26,28 @@ public class ScheduledTasks {
     @Scheduled(cron = "0 */10 * * * ?")
     public void updateStatus() {
         for (ServiceProvider serviceProvider : this.serviceProviderRepository.findAll()) {
-            if(serviceProvider.getEndpoint() != null) {
+            if (serviceProvider.getEndpoint() != null) {
                 try {
                     ResponseEntity<String> response = this.restTemplate.getForEntity(serviceProvider.getEndpoint(), String.class);
                     HttpStatusCode statusCode = response.getStatusCode();
-                    if (statusCode.is2xxSuccessful() && !"Operational".equals(serviceProvider.getStatus())) {
-                        serviceProvider.setStatus("Operational");
-                        this.serviceProviderRepository.save(serviceProvider);
+                    if (statusCode.is2xxSuccessful()) {
+                        Utils.update(serviceProvider, "operational", this.serviceProviderRepository);
                     } else {
                         throw new RestClientException("Unexpected status code");
                     }
-                } catch (RestClientException e) {
-                    if (!"Down".equals(serviceProvider.getStatus())) {
-                        serviceProvider.setStatus("Down");
-                        this.serviceProviderRepository.save(serviceProvider);
+                } catch (RestClientException exception) {
+                    Utils.update(serviceProvider, "outage", this.serviceProviderRepository);
+                }
+            } else {
+                if (serviceProvider.getLastHeartbeat() != null) {
+                    Duration duration = Duration.between(serviceProvider.getLastHeartbeat(), LocalDateTime.now());
+                    if (duration.toMinutes() >= 12) {
+                        Utils.update(serviceProvider, "outage", this.serviceProviderRepository);
                     }
                 }
             }
         }
     }
+
+
 }
